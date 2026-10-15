@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concéntrese de los Valores · IE Progresar</title>
+<style>
+  /* ===================== VARIABLES Y BASE ===================== */
+  :root{
+    --azul:#0b3d91;
+    --azul-claro:#1565c0;
+    --verde:#1f9d55;
+    --verde-claro:#2ecc71;
+    --amarillo:#f2c200;
+    --rojo:#d62828;
+    --blanco:#ffffff;
+    --sombra:0 4px 12px rgba(0,0,0,.18);
+    --radio:12px;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{ height:100%; }
+
+  body{
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(242,194,0,.25), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(46,204,113,.30), transparent 45%),
+      linear-gradient(140deg,#0b3d91 0%,#0d47a1 40%,#1f9d55 100%);
+    background-attachment:fixed;
+    color:#12213a;
+    padding:clamp(6px,1vh,14px) clamp(8px,1.5vw,20px);
+    overflow-x:hidden;
+  }
+
+  /* El contenedor ocupa exactamente el alto de la pantalla en computador */
+  .contenedor{
+    max-width:1300px;
+    height:100%;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:clamp(6px,1vh,12px);
+  }
+
+  /* ===================== ENCABEZADO (escudo + título + bandera) ===================== */
+  .encabezado{
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(10px,3vw,40px);
+    color:#fff;
+  }
+
+  .encabezado .insignia{
+    height:clamp(48px,10vh,92px);
+    width:auto;
+    max-width:22vw;
+    object-fit:contain;
+    filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));
+  }
+
+  .titulos{ text-align:center; min-width:0; }
+
+  .titulos h1{
+    font-size:clamp(1.05rem,3.4vh + .6vw,2.2rem);
+    font-weight:800;
+    letter-spacing:.5px;
+    line-height:1.1;
+    text-shadow:0 3px 10px rgba(0,0,0,.35);
+  }
+
+  .titulos h1 span{ color:var(--amarillo); }
+
+  .subtitulo{
+    margin-top:3px;
+    font-size:clamp(.65rem,1.6vh + .3vw,.95rem);
+    font-weight:600;
+    opacity:.92;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+
+  /* ===================== PANEL DE CONTROL ===================== */
+  .panel{
+    flex:none;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,.94);
+    border-radius:var(--radio);
+    padding:6px 12px;
+    box-shadow:var(--sombra);
+  }
+
+  .marcador{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; flex:1; }
+
+  .dato{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:8px;
+    padding:4px 12px;
+    border-radius:10px;
+    background:linear-gradient(180deg,#f4f8ff,#e6eefc);
+    border:2px solid #d3e0f7;
+  }
+
+  .dato .etiqueta{
+    font-size:.65rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#4a5f80;
+  }
+
+  .dato .valor{
+    font-size:clamp(.95rem,2.2vh + .3vw,1.25rem);
+    font-weight:800;
+    color:var(--azul);
+  }
+
+  .btn{
+    font-family:inherit;
+    font-size:clamp(.75rem,1.6vh + .2vw,.92rem);
+    font-weight:700;
+    color:#fff;
+    background:linear-gradient(135deg,var(--verde),var(--verde-claro));
+    border:none;
+    border-radius:10px;
+    padding:8px 18px;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(31,157,85,.4);
+    transition:transform .15s, box-shadow .15s, filter .15s;
+  }
+
+  .btn:hover{ transform:translateY(-2px); filter:brightness(1.07); box-shadow:0 7px 16px rgba(31,157,85,.5); }
+  .btn:active{ transform:translateY(1px); }
+
+  /* ===================== TABLERO (6 columnas x 3 filas) ===================== */
+  .tablero{
+    flex:1;
+    min-height:0;               /* permite que el tablero se encoja y quepa en pantalla */
+    display:grid;
+    grid-template-columns:repeat(6, 1fr);
+    grid-template-rows:repeat(3, 1fr);
+    gap:clamp(5px,1vh,12px);
+  }
+
+  /* ===================== CARTAS ===================== */
+  .carta{
+    position:relative;
+    width:100%;
+    height:100%;
+    min-height:0;
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    perspective:900px;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  .carta:disabled{ cursor:default; }
+
+  .carta-interior{
+    position:relative;
+    width:100%;
+    height:100%;
+    transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.4,.2,.2,1);
+    border-radius:var(--radio);
+  }
+
+  .carta.volteada .carta-interior,
+  .carta.emparejada .carta-interior{ transform:rotateY(180deg); }
+
+  .cara{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:var(--radio);
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    overflow:hidden;
+    box-shadow:var(--sombra);
+  }
+
+  /* ---- Reverso: ESCUDO del colegio en todas las cartas ---- */
+  .atras{
+    background:
+      radial-gradient(circle at 50% 35%, #ffffff 0%, #eaf1ff 70%, #d3e0f7 100%);
+    border:3px solid var(--azul);
+    padding:6%;
+  }
+
+  .atras img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
+  /* Si la imagen del escudo no carga, se muestra "IE" */
+  .atras .respaldo{
+    display:none;
+    font-weight:900;
+    font-size:clamp(1rem,3vh,1.8rem);
+    color:var(--azul);
+  }
+  .atras.sin-imagen .respaldo{ display:block; }
+  .atras.sin-imagen img{ display:none; }
+
+  .atras::after{
+    content:"";
+    position:absolute;
+    inset:4px;
+    border:1.5px dashed rgba(11,61,145,.35);
+    border-radius:8px;
+    pointer-events:none;
+  }
+
+  /* ---- Frente (imagen del valor + nombre) ---- */
+  .frente{
+    transform:rotateY(180deg);
+    background:linear-gradient(180deg,#ffffff,#f1f7ff);
+    border:3px solid var(--verde);
+    padding:4% 4% 3%;
+    gap:2px;
+  }
+
+  .figura{
+    position:relative;
+    flex:1;
+    min-height:0;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .figura .emoji{
+    font-size:clamp(1.3rem,5.5vh,3rem);
+    line-height:1;
+  }
+
+  .figura img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
+  .figura img.oculta{ display:none; }
+
+  .nombre{
+    font-size:clamp(.55rem,1.3vw,.82rem);
+    font-weight:800;
+    text-align:center;
+    text-transform:uppercase;
+    letter-spacing:.2px;
+    color:var(--azul);
+    line-height:1.1;
+    width:100%;
+  }
+
+  /* ---- Estados ---- */
+  .carta.emparejada .frente{
+    border-color:var(--amarillo);
+    background:linear-gradient(180deg,#fffdf0,#fff6cc);
+    animation:brillo .6s ease;
+  }
+
+  .carta.emparejada{ animation:salto .5s ease; }
+
+  @keyframes brillo{
+    0%{ box-shadow:0 0 0 0 rgba(242,194,0,.9); }
+    100%{ box-shadow:0 0 0 14px rgba(242,194,0,0); }
+  }
+
+  @keyframes salto{
+    0%{ transform:scale(1); }
+    40%{ transform:scale(1.07); }
+    100%{ transform:scale(1); }
+  }
+
+  /* ===================== MENSAJE ===================== */
+  .mensaje{
+    flex:none;
+    height:clamp(48px,9vh,68px);
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:6px 16px;
+    border-radius:var(--radio);
+    background:rgba(255,255,255,.95);
+    border-left:8px solid var(--amarillo);
+    box-shadow:var(--sombra);
+    font-size:clamp(.72rem,1.7vh + .2vw,.95rem);
+    font-weight:600;
+    line-height:1.25;
+    color:#1b2c4a;
+  }
+
+  .mensaje strong{ color:var(--verde); }
+
+  /* ===================== MODAL ===================== */
+  .modal{
+    position:fixed;
+    inset:0;
+    background:rgba(6,20,45,.82);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+    animation:aparecer .3s ease;
+  }
+
+  .modal.oculto{ display:none; }
+
+  @keyframes aparecer{ from{ opacity:0; } to{ opacity:1; } }
+
+  .modal-caja{
+    background:#fff;
+    border-radius:20px;
+    padding:clamp(20px,4vw,36px);
+    max-width:520px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+    border-top:10px solid var(--amarillo);
+    animation:subir .4s cubic-bezier(.2,.9,.3,1.3);
+  }
+
+  @keyframes subir{ from{ transform:translateY(40px) scale(.94); opacity:0; } to{ transform:none; opacity:1; } }
+
+  .modal-caja h2{
+    font-size:clamp(1.3rem,3.4vw,2rem);
+    color:var(--azul);
+    margin-bottom:12px;
+  }
+
+  .modal-caja p{
+    font-size:clamp(.85rem,1.9vw,1.05rem);
+    color:#33465f;
+    line-height:1.6;
+    margin-bottom:20px;
+  }
+
+  .modal-caja p b{ color:var(--verde); }
+
+  /* ===================== RESPONSIVE (celulares y tablets en vertical) ===================== */
+  @media (max-width:900px), (max-aspect-ratio:1/1){
+    html,body{ height:auto; }
+    body{ padding:8px; }
+
+    .contenedor{ height:auto; }
+
+    .encabezado .insignia{ height:clamp(40px,9vw,70px); }
+
+    .tablero{
+      flex:none;
+      grid-template-columns:repeat(3, 1fr);
+      grid-template-rows:none;
+      grid-auto-rows:auto;
+    }
+
+    .carta{ height:auto; aspect-ratio:3 / 4; }
+
+    .nombre{ font-size:clamp(.6rem,2.6vw,.8rem); }
+    .figura .emoji{ font-size:clamp(1.6rem,8vw,2.8rem); }
+
+    .mensaje{ height:auto; min-height:56px; overflow:visible; }
+  }
+
+  @media (max-width:520px){
+    .panel{ padding:8px; }
+    .dato{ padding:4px 8px; gap:5px; }
+    .btn{ width:100%; }
+    .subtitulo{ font-size:.6rem; letter-spacing:.5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+
+  <!-- ===================== ENCABEZADO: escudo | título | bandera ===================== -->
+  <header class="encabezado">
+    <img class="insignia" src="img/escudo.jpg" alt="Escudo de la IE Progresar"
+         onerror="this.style.display='none'">
+
+    <div class="titulos">
+      <h1>Concéntrese de los <span>Valores Institucionales</span></h1>
+      <p class="subtitulo">IE Progresar · Festival de Convivencia</p>
+    </div>
+
+    <img class="insignia" src="img/bandera.jpg" alt="Bandera de la IE Progresar"
+         onerror="this.style.display='none'">
+  </header>
+
+  <section class="panel">
+    <div class="marcador">
+      <div class="dato">
+        <span class="etiqueta">Parejas</span>
+        <span class="valor" id="parejas">0 / 9</span>
+      </div>
+      <div class="dato">
+        <span class="etiqueta">Intentos</span>
+        <span class="valor" id="intentos">0</span>
+      </div>
+      <div class="dato">
+        <span class="etiqueta">Tiempo</span>
+        <span class="valor" id="tiempo">00:00</span>
+      </div>
+    </div>
+    <button class="btn" id="reiniciar" type="button">🔄 Reiniciar juego</button>
+  </section>
+
+  <div class="tablero" id="tablero" aria-label="Tablero del juego de memoria"></div>
+
+  <aside class="mensaje" id="mensaje">
+    ¡Encuentra las parejas de los valores institucionales! 🧠
+  </aside>
+
+</div>
+
+<!-- ===================== MODAL DE VICTORIA ===================== -->
+<div class="modal oculto" id="modal">
+  <div class="modal-caja">
+    <h2>¡Felicitaciones! 🎉</h2>
+    <p id="modal-texto"></p>
+    <button class="btn" id="jugar-otra" type="button">Jugar otra vez</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   1) CONFIGURACIÓN
+   ---------------------------------------------------------------------
+   Archivos que debes tener en la carpeta  img/  junto al index.html:
+     img/escudo.png   -> escudo del colegio (encabezado y reverso de cartas)
+     img/bandera.png  -> bandera del colegio (encabezado)
+     img/responsabilidad.png, img/creatividad.png ... (imágenes de valores)
+   ===================================================================== */
+const IMG_ESCUDO = 'img/escudo.jpg';
+
+const VALORES = [
+  {
+    id: 'responsabilidad',
+    nombre: 'Responsabilidad',
+    img: 'img/responsabilidad.png',
+    emoji: '🎯',
+    descripcion: 'Compromiso consciente y reflexivo de la libertad individual en favor de sí mismo y del bienestar general.'
+  },
+  {
+    id: 'creatividad',
+    nombre: 'Creatividad',
+    img: 'img/creatividad.png',
+    emoji: '💡',
+    descripcion: 'Capacidad de innovar y transformar situaciones, momentos y/o contextos.'
+  },
+  {
+    id: 'participacion',
+    nombre: 'Participación',
+    img: 'img/participacion.png',
+    emoji: '🙋',
+    descripcion: 'Capacidad de involucrarse en la toma de decisiones en los diferentes eventos de la vida.'
+  },
+  {
+    id: 'respeto',
+    nombre: 'Respeto',
+    img: 'img/respeto.png',
+    emoji: '🕊️',
+    descripcion: 'Reconocer la diversidad, la protección del medio ambiente y los seres sintientes.'
+  },
+  {
+    id: 'tolerancia',
+    nombre: 'Tolerancia',
+    img: 'img/tolerancia.png',
+    emoji: '🌈',
+    descripcion: 'Respeto a la individualidad y los derechos humanos; ver en la diferencia una oportunidad para el otro y para sí mismo.'
+  },
+  {
+    id: 'solidaridad',
+    nombre: 'Solidaridad',
+    img: 'img/solidaridad.png',
+    emoji: '❤️',
+    descripcion: 'Capacidad de apoyar incondicionalmente personas, causas, situaciones y/o necesidades.'
+  },
+  {
+    id: 'liderazgo',
+    nombre: 'Liderazgo',
+    img: 'img/liderazgo.png',
+    emoji: '⭐',
+    descripcion: 'Capacidad de tomar decisiones asertivas a favor de un equipo de trabajo.'
+  },
+  {
+    id: 'resiliencia',
+    nombre: 'Resiliencia',
+    img: 'img/resiliencia.png',
+    emoji: '🌱',
+    descripcion: 'Capacidad de reponerse frente a la adversidad.'
+  },
+  {
+    id: 'sostenibilidad',
+    nombre: 'Sostenibilidad',
+    img: 'img/sostenibilidad.png',
+    emoji: '🌍',
+    descripcion: 'Compromiso de gestionar responsablemente los recursos presentes para garantizar la excelencia educativa y el bienestar del entorno.'
+  }
+];
+
+/* =====================================================================
+   2) REFERENCIAS AL DOM
+   ===================================================================== */
+const tablero        = document.getElementById('tablero');
+const elParejas      = document.getElementById('parejas');
+const elIntentos     = document.getElementById('intentos');
+const elTiempo       = document.getElementById('tiempo');
+const elMensaje      = document.getElementById('mensaje');
+const btnReiniciar   = document.getElementById('reiniciar');
+const modal          = document.getElementById('modal');
+const modalTexto     = document.getElementById('modal-texto');
+const btnJugarOtra   = document.getElementById('jugar-otra');
+
+/* =====================================================================
+   3) ESTADO DEL JUEGO
+   ===================================================================== */
+let primeraCarta   = null;
+let segundaCarta   = null;
+let bloqueado      = false;
+let parejasHechas  = 0;
+let intentos       = 0;
+let segundos       = 0;
+let cronometro     = null;
+let juegoIniciado  = false;
+
+/* =====================================================================
+   4) UTILIDADES
+   ===================================================================== */
+function mezclar(array){
+  const copia = array.slice();
+  for (let i = copia.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+function formatearTiempo(totalSegundos){
+  const min = String(Math.floor(totalSegundos / 60)).padStart(2, '0');
+  const seg = String(totalSegundos % 60).padStart(2, '0');
+  return `${min}:${seg}`;
+}
+
+function buscarValor(id){
+  return VALORES.find(v => v.id === id);
+}
+
+/* =====================================================================
+   5) CONSTRUCCIÓN DEL TABLERO
+   ===================================================================== */
+function crearTablero(){
+  tablero.innerHTML = '';
+
+  const mazo = mezclar([...VALORES, ...VALORES]);
+
+  mazo.forEach((valor, indice) => {
+    const carta = document.createElement('button');
+    carta.type = 'button';
+    carta.className = 'carta';
+    carta.dataset.valor = valor.id;
+    carta.setAttribute('aria-label', `Carta ${indice + 1}`);
+
+    carta.innerHTML = `
+      <div class="carta-interior">
+        <div class="cara atras">
+          <img src="${IMG_ESCUDO}" alt="Escudo IE Progresar"
+               onerror="this.parentElement.classList.add('sin-imagen')">
+          <span class="respaldo">IE</span>
+        </div>
+        <div class="cara frente">
+          <div class="figura">
+            <span class="emoji">${valor.emoji}</span>
+            <img src="${valor.img}" alt="${valor.nombre}"
+                 onerror="this.classList.add('oculta')">
+          </div>
+          <span class="nombre">${valor.nombre}</span>
+        </div>
+      </div>
+    `;
+
+    carta.addEventListener('click', () => voltearCarta(carta));
+    tablero.appendChild(carta);
+  });
+}
+
+/* =====================================================================
+   6) LÓGICA PRINCIPAL
+   ===================================================================== */
+function voltearCarta(carta){
+  if (bloqueado) return;
+  if (carta.classList.contains('volteada')) return;
+  if (carta.classList.contains('emparejada')) return;
+
+  if (!juegoIniciado) iniciarCronometro();
+
+  carta.classList.add('volteada');
+
+  if (!primeraCarta){
+    primeraCarta = carta;
+    return;
+  }
+
+  segundaCarta = carta;
+  intentos++;
+  elIntentos.textContent = intentos;
+  bloqueado = true;
+
+  const sonPareja = primeraCarta.dataset.valor === segundaCarta.dataset.valor;
+
+  if (sonPareja){
+    setTimeout(() => {
+      primeraCarta.classList.add('emparejada');
+      segundaCarta.classList.add('emparejada');
+      primeraCarta.disabled = true;
+      segundaCarta.disabled = true;
+
+      parejasHechas++;
+      actualizarMarcador();
+      mostrarDescripcion(primeraCarta.dataset.valor);
+
+      primeraCarta = null;
+      segundaCarta = null;
+      bloqueado = false;
+
+      if (parejasHechas === VALORES.length) ganar();
+    }, 480);
+  } else {
+    elMensaje.innerHTML = '❌ No coinciden... ¡sigue intentando!';
+    setTimeout(() => {
+      primeraCarta.classList.remove('volteada');
+      segundaCarta.classList.remove('volteada');
+      primeraCarta = null;
+      segundaCarta = null;
+      bloqueado = false;
+    }, 950);
+  }
+}
+
+function mostrarDescripcion(idValor){
+  const valor = buscarValor(idValor);
+  elMensaje.innerHTML =
+    `✅ ¡Pareja encontrada! <strong>${valor.nombre}</strong>: ${valor.descripcion}`;
+}
+
+function actualizarMarcador(){
+  elParejas.textContent = `${parejasHechas} / ${VALORES.length}`;
+  elIntentos.textContent = intentos;
+}
+
+/* =====================================================================
+   7) CRONÓMETRO
+   ===================================================================== */
+function iniciarCronometro(){
+  juegoIniciado = true;
+  cronometro = setInterval(() => {
+    segundos++;
+    elTiempo.textContent = formatearTiempo(segundos);
+  }, 1000);
+}
+
+function detenerCronometro(){
+  clearInterval(cronometro);
+  cronometro = null;
+}
+
+/* =====================================================================
+   8) VICTORIA
+   ===================================================================== */
+function ganar(){
+  detenerCronometro();
+  setTimeout(() => {
+    modalTexto.innerHTML =
+      `Completaste el Concentrése en <b>${intentos} intentos</b> ` +
+      `y un tiempo de <b>${formatearTiempo(segundos)}</b>.<br><br>` +
+      `Recuerda: los valores institucionales se viven todos los días en la IE Progresar. 💚💛💙`;
+    modal.classList.remove('oculto');
+  }, 600);
+}
+
+/* =====================================================================
+   9) REINICIO
+   ===================================================================== */
+function reiniciarJuego(){
+  detenerCronometro();
+
+  primeraCarta  = null;
+  segundaCarta  = null;
+  bloqueado     = false;
+  parejasHechas = 0;
+  intentos      = 0;
+  segundos      = 0;
+  juegoIniciado = false;
+
+  elParejas.textContent  = `0 / ${VALORES.length}`;
+  elIntentos.textContent = '0';
+  elTiempo.textContent   = '00:00';
+  elMensaje.innerHTML    = '¡Encuentra las parejas de los valores institucionales! 🧠';
+
+  modal.classList.add('oculto');
+
+  crearTablero();
+}
+
+/* =====================================================================
+   10) EVENTOS E INICIO
+   ===================================================================== */
+btnReiniciar.addEventListener('click', reiniciarJuego);
+btnJugarOtra.addEventListener('click', reiniciarJuego);
+
+document.addEventListener('DOMContentLoaded', () => {
+  elParejas.textContent = `0 / ${VALORES.length}`;
+  crearTablero();
+});
+</script>
+</body>
+</html>
